@@ -5,27 +5,31 @@ import java.util.Scanner;
 public class Main {
     static void main() {
         Scanner scanner = new Scanner(System.in); // 2. 객체 생성
-        System.out.println("==wiseSaying app ==");
+        System.out.println("==명언 앱==");
+        int lastid = 0;
         while(true) {
-            System.out.print("command: ");
+            System.out.print("명령: ");
             String cmd = scanner.nextLine().trim();
 
-            if(cmd.equals("exit")){
+            int id = lastid++;
+
+            if(cmd.equals("종료")){
                 break;
             }
 
-            else if(cmd.equals("register")) {
-                System.out.print("wiseSaying: ");
+            else if(cmd.equals("등록")) {
+                System.out.print("명언: ");
                 String wiseSaying = scanner.nextLine().trim();
-                System.out.print("authoer: ");
+                System.out.print("작자: ");
                 String author = scanner.nextLine().trim();
-                System.out.print("command registered.");
+                System.out.println("명언 등록.");
 
-                System.out.println("1 wiseSaying registered.");
+                System.out.println(lastid + " 번째 명언이 등록되었습니다");
+
             }
 
             else{
-                System.out.println("register or exit");
+                System.out.println("등록/종료를 입력하십시오");
             }
         }
     }

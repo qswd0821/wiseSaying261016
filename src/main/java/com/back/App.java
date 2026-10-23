@@ -15,21 +15,26 @@ import java.util.List;
             while (true) {
                 System.out.print("명령) ");
                 String cmd = scanner.nextLine().trim();
+                Rq rq = new Rq(cmd);
 
-                if (cmd.equals("종료")) {
-                    break;
-                } else if (cmd.equals("목록")) {
-                    actionList();
-                } else if (cmd.equals("등록")) {
-                    actionWrite();
-                } else if (cmd.startsWith("삭제")) {
-                    actionDelete(cmd);
-                } else if (cmd.startsWith("수정")) {
-                    actionModify(cmd);
+                switch ( rq.getActionName() ){
+                    case "종료":
+                        System.out.println("프로그램 종료");
+                        return;
+                    case "목록":
+                        actionList();
+                        break;
+                    case "등록":
+                        actionWrite();
+                        break;
+                    case "삭제":
+                        actionDelete(rq);
+                        break;
+                    case "수정":
+                        actionModify(rq);
+                        break;
                 }
             }
-
-            scanner.close();
         }
 
         private void actionList() {
@@ -54,42 +59,53 @@ import java.util.List;
             System.out.println("%d번 명언이 등록되었습니다.".formatted(wiseSaying.getId()));
         }
 
-        private void actionDelete(String cmd) {
-            String[] cmdBits = cmd.split("=", 2);
+        private void actionDelete(Rq rq) {
+            int id = rq.getParamAsInt("id", -1);
 
-            if (cmdBits.length < 2 || cmdBits[1].isEmpty()) {
-                System.out.println("id를 입력해주세요.");
+            if (id == -1) {
+                System.out.println("id를 숫자로 입력해주세요.");
                 return;
             }
 
-            int id = Integer.parseInt(cmdBits[1]);
+            boolean deleted = delete(id);
 
-            if (delete(id)) {
-                System.out.println("%d번 명언이 삭제되었습니다.".formatted(id));
-            } else {
-                System.out.println("%d번 명언은 존재하지 않습니다".formatted(id));
-            }
-        }
-
-        private void actionModify(String cmd) {
-            String[] cmdBits = cmd.split("=", 2);
-
-            if (cmdBits.length < 2 || cmdBits[1].isEmpty()) {
-                System.out.println("id를 입력해주세요.");
+            if (!deleted) {
+                System.out.println("%d번 명언은 존재하지 않습니다.".formatted(id));
                 return;
             }
 
-            int id = Integer.parseInt(cmdBits[1]);
-
-            if (modify(id)) {
-                System.out.println("%d번 명언이 수정되었습니다.".formatted(id));
-            } else {
-                System.out.println("%d번 명언은 존재하지 않습니다".formatted(id));
-            }
+            System.out.println("%d번 명언이 삭제되었습니다.".formatted(id));
         }
 
-        private int getSize() {
-            return wiseSayings.size();
+        private void actionModify(Rq rq) {
+            int id = rq.getParamAsInt("id", -1);
+
+            if (id == -1) {
+                System.out.println("id를 숫자로 입력해주세요.");
+                return;
+            }
+
+            WiseSaying wiseSaying = findById(id);
+
+            if (wiseSaying == null) {
+                System.out.println("%d번 명언은 존재하지 않습니다.".formatted(id));
+                return;
+            }
+
+            System.out.printf("명언(기존) : %s\n", wiseSaying.getContent());
+            System.out.print("명언 : ");
+            String content = scanner.nextLine().trim();
+
+            System.out.printf("작가(기존) : %s\n", wiseSaying.getAuthor());
+            System.out.print("작가 : ");
+            String author = scanner.nextLine().trim();
+
+            modify(wiseSaying, content, author);
+        }
+
+        private void modify(WiseSaying wiseSaying, String content, String author) {
+            wiseSaying.setContent(content);
+            wiseSaying.setAuthor(author);
         }
 
         private List<WiseSaying> findForList() {

@@ -3,6 +3,7 @@ package com.back.domain.wiseSaying.repository;
 import com.back.domain.wiseSaying.entity.WiseSaying;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,7 +21,9 @@ public class WiseSayingRepository {
     }
 
     public List<WiseSaying> findAllDesc() {
-        return wiseSayings.reversed();
+        List<WiseSaying> result = new ArrayList<>(wiseSayings);
+        Collections.reverse(result);
+        return result;
     }
 
     public Optional<WiseSaying> findById(int id) {

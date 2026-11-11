@@ -9,19 +9,31 @@ import java.util.Scanner;
 
 public class App {
     private final Scanner scanner;
+    private final boolean makeSampleData;
     private final SystemController systemController;
     private final WiseSayingController wiseSayingController;
 
+    // 실제 실행용: 명언이 0개면 샘플 명언 10개를 만들고 시작한다.
     public App(Scanner scanner) {
+        this(scanner, true);
+    }
+
+    // makeSampleData 가 false 면 빈 저장소로 시작한다. (CRUD 테스트용)
+    public App(Scanner scanner, boolean makeSampleData) {
         // App 을 만들 때마다 저장소와 번호를 새로 초기화한다.
         AppContext.init(scanner);
 
         this.scanner = AppContext.scanner;
+        this.makeSampleData = makeSampleData;
         this.systemController = AppContext.systemController;
         this.wiseSayingController = AppContext.wiseSayingController;
     }
 
     public void run() {
+        if (makeSampleData) {
+            wiseSayingController.makeSampleDataIfEmpty();
+        }
+
         System.out.println("== 명언 앱 ==");
 
         while (true) {
@@ -39,7 +51,7 @@ public class App {
                     return;
                 }
                 case "등록" -> wiseSayingController.actionWrite();
-                case "목록" -> wiseSayingController.actionList();
+                case "목록" -> wiseSayingController.actionList(rq);
                 case "삭제" -> wiseSayingController.actionDelete(rq);
                 case "수정" -> wiseSayingController.actionModify(rq);
             }

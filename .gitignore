@@ -41,3 +41,6 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+### 명언 앱 데이터 ###
+db/
+db_test/

@@ -42,6 +42,10 @@ public class WiseSayingService {
         return wiseSayingRepository.deleteById(id);
     }
 
+    public void build() {
+        wiseSayingRepository.build();
+    }
+
     public void modify(WiseSaying wiseSaying, String content, String author) {
         wiseSaying.setContent(content);
         wiseSaying.setAuthor(author);

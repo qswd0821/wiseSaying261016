@@ -2,6 +2,7 @@ package com.back.global;
 
 import com.back.domain.system.controller.SystemController;
 import com.back.domain.wiseSaying.controller.WiseSayingController;
+import com.back.domain.wiseSaying.repository.WiseSayingFileRepository;
 import com.back.domain.wiseSaying.repository.WiseSayingRepository;
 import com.back.domain.wiseSaying.service.WiseSayingService;
 
@@ -17,13 +18,10 @@ public class AppContext {
 
     public static void init(Scanner scanner) {
         AppContext.scanner = scanner;
-        wiseSayingRepository = new WiseSayingRepository();
+        // 리포지터리 구현체를 여기서만 고른다. (메모리로 돌리려면 new WiseSayingMemoryRepository())
+        wiseSayingRepository = new WiseSayingFileRepository(AppConfig.getDbDirPath());
         wiseSayingService = new WiseSayingService(wiseSayingRepository);
         wiseSayingController = new WiseSayingController(scanner, wiseSayingService);
         systemController = new SystemController();
-    }
-
-    public static void init() {
-        init(new Scanner(System.in));
     }
 }

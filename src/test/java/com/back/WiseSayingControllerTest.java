@@ -1,14 +1,19 @@
 package com.back;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// AppTestRunner.run() 은 매번 new App(scanner) 를 만들고,
-// App 생성자가 AppContext.init() 으로 저장소와 번호를 새로 만든다.
+// 테스트는 db_test/ 폴더를 쓰고, 매 테스트 전에 비운다.
 // 그래서 테스트 실행 순서와 상관없이 항상 1번부터 시작한다.
 class WiseSayingControllerTest {
+    @BeforeEach
+    void beforeEach() {
+        AppTestRunner.clearTestDb();
+    }
+
     @Test
     @DisplayName("종료")
     void t1() {
@@ -173,7 +178,7 @@ class WiseSayingControllerTest {
     }
 
     @Test
-    @DisplayName("테스트마다 저장소가 초기화되어 번호가 1부터 다시 시작한다")
+    @DisplayName("저장 폴더를 비우면 번호가 1부터 다시 시작한다")
     void t10() {
         AppTestRunner.run("""
                 등록
@@ -181,6 +186,8 @@ class WiseSayingControllerTest {
                 작자미상
                 종료
                 """);
+
+        AppTestRunner.clearTestDb();
 
         String out = AppTestRunner.run("""
                 등록

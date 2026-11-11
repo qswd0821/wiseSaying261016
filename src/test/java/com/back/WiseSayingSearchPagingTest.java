@@ -1,5 +1,6 @@
 package com.back;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -10,6 +11,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 // 샘플 명언 10개("명언 1 / 작자미상 1" ~ "명언 10 / 작자미상 10")로 시작하는 검색·페이징 테스트
 class WiseSayingSearchPagingTest {
+    @BeforeEach
+    void beforeEach() {
+        AppTestRunner.clearTestDb();
+    }
+
     private static List<String> lines(String out) {
         return Arrays.stream(out.split("\\R"))
                 .map(line -> line.replace("명령) ", "").trim())

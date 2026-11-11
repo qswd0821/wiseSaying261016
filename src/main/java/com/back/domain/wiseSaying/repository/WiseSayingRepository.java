@@ -9,32 +9,34 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class WiseSayingRepository {
-    private final List<WiseSaying> wiseSayings = new ArrayList<>();
-    private int lastId = 0;
+// 서비스는 이 인터페이스만 안다. 구현체(메모리/파일)를 바꿔 끼워도 서비스·컨트롤러는 그대로다.
+public interface WiseSayingRepository {
+    // 새 명언(id == 0)이면 번호를 붙여 저장하고, 기존 명언이면 덮어쓴다.
+    WiseSaying save(WiseSaying wiseSaying);
 
-    public WiseSaying save(WiseSaying wiseSaying) {
-        if (wiseSaying.isNew()) {
-            wiseSaying.setId(++lastId);
-            wiseSayings.add(wiseSaying);
-        }
+    // 번호 오름차순
+    List<WiseSaying> findAll();
 
-        return wiseSaying;
+    Optional<WiseSaying> findById(int id);
+
+    boolean deleteById(int id);
+
+    // 모든 명언을 data.json 으로 모은다.
+    void build();
+
+    default int count() {
+        return findAll().size();
     }
 
-    public int count() {
-        return wiseSayings.size();
-    }
-
-    public List<WiseSaying> findAllDesc() {
-        List<WiseSaying> result = new ArrayList<>(wiseSayings);
+    default List<WiseSaying> findAllDesc() {
+        List<WiseSaying> result = new ArrayList<>(findAll());
         Collections.reverse(result);
         return result;
     }
 
     // keyword 가 비어 있으면 전체, 아니면 keywordType(content/author)에 keyword 가 들어간 것만 최신순으로 골라
     // pageNo 페이지(1부터 시작)에 해당하는 최대 pageSize 개를 돌려준다.
-    public Page<WiseSaying> findForListDesc(String keywordType, String keyword, int pageNo, int pageSize) {
+    default Page<WiseSaying> findForListDesc(String keywordType, String keyword, int pageNo, int pageSize) {
         List<WiseSaying> filtered = findAllDesc().stream()
                 .filter(w -> matches(w, keywordType, keyword))
                 .collect(Collectors.toList());
@@ -45,7 +47,7 @@ public class WiseSayingRepository {
         return new Page<>(new ArrayList<>(filtered.subList(fromIndex, toIndex)), filtered.size(), pageNo, pageSize);
     }
 
-    private boolean matches(WiseSaying wiseSaying, String keywordType, String keyword) {
+    private static boolean matches(WiseSaying wiseSaying, String keywordType, String keyword) {
         if (keyword == null || keyword.isEmpty()) {
             return true;
         }
@@ -55,15 +57,5 @@ public class WiseSayingRepository {
             case "content" -> wiseSaying.getContent().contains(keyword);
             default -> wiseSaying.getContent().contains(keyword) || wiseSaying.getAuthor().contains(keyword);
         };
-    }
-
-    public Optional<WiseSaying> findById(int id) {
-        return wiseSayings.stream()
-                .filter(w -> w.getId() == id)
-                .findFirst();
-    }
-
-    public boolean deleteById(int id) {
-        return wiseSayings.removeIf(w -> w.getId() == id);
     }
 }

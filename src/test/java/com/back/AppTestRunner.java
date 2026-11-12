@@ -1,5 +1,6 @@
 package com.back;
 
+import com.back.domain.wiseSaying.repository.WiseSayingDbRepository;
 import com.back.global.AppConfig;
 import com.back.standard.util.TestUtil;
 
@@ -40,8 +41,27 @@ public final class AppTestRunner {
         return run(input, scanner -> new App(scanner, true).run());
     }
 
-    // 테스트 전용 저장 폴더를 통째로 지운다. 매 테스트 전에 호출한다.
+    // 테스트 DB 의 wise_saying 테이블을 TRUNCATE 하고(번호도 1로 리셋), 테스트 출력 폴더도 지운다.
+    // 매 테스트 전에 호출한다.
     public static void clearTestDb() {
+        newTestDbRepository().truncate();
+        deleteTestDir();
+    }
+
+    public static WiseSayingDbRepository newTestDbRepository() {
+        if (!AppConfig.isTestMode()) {
+            throw new IllegalStateException("테스트 모드가 아닙니다.");
+        }
+
+        return new WiseSayingDbRepository(
+                AppConfig.getJdbcUrl(),
+                AppConfig.getDbUsername(),
+                AppConfig.getDbPassword(),
+                AppConfig.getDbDirPath()
+        );
+    }
+
+    private static void deleteTestDir() {
         Path dir = Path.of(AppConfig.getDbDirPath());
 
         if (!Files.exists(dir)) {

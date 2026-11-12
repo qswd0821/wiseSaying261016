@@ -11,6 +11,8 @@ repositories {
 }
 
 dependencies {
+    runtimeOnly("com.mysql:mysql-connector-j:9.5.0")
+
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -19,6 +21,11 @@ dependencies {
 
 application {
     mainClass.set("com.back.Main")
+}
+
+tasks.named<JavaExec>("run") {
+    standardInput = System.`in`
+    jvmArgs("-Dfile.encoding=UTF-8", "-Dstdout.encoding=UTF-8")
 }
 
 tasks.withType<JavaCompile> {

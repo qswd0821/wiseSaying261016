@@ -1,0 +1,6 @@
+# 이 파일을 config/db.properties 로 복사해서 값을 채운다. (config/db.properties 는 git 에 올리지 않는다)
+# 환경변수 DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD 가 있으면 그 값이 우선한다.
+db.host=127.0.0.1
+db.port=3307
+db.username=root
+db.password=

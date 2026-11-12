@@ -1,5 +1,9 @@
 package com.back;
 
+import com.back.domain.wiseSaying.entity.WiseSaying;
+import com.back.domain.wiseSaying.repository.WiseSayingDbRepository;
+import com.back.global.AppConfig;
+import com.back.standard.dto.Page;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -7,35 +11,28 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// 파일 저장·재시작·빌드 테스트. AppTestRunner.run() 을 두 번 부르면 "프로그램 재시작" 과 같다.
-class WiseSayingFilePersistenceTest {
+// MySQL 저장·재시작·빌드 테스트. AppTestRunner.run() 을 두 번 부르면 "프로그램 재시작" 과 같다.
+// 테스트 DB(wise_saying_test)를 쓰고, 매 테스트 전에 TRUNCATE 한다.
+class WiseSayingDbPersistenceTest {
     @BeforeEach
     void beforeEach() {
         AppTestRunner.clearTestDb();
     }
 
-    private static String read(String fileName) throws IOException {
-        return Files.readString(AppTestRunner.testDbPath(fileName), StandardCharsets.UTF_8);
-    }
-
-    private static boolean exists(String fileName) {
-        return Files.exists(AppTestRunner.testDbPath(fileName));
-    }
-
     @Test
-    @DisplayName("테스트는 실제 db/ 가 아닌 테스트 전용 폴더를 쓴다")
+    @DisplayName("테스트는 개발 DB 가 아닌 테스트 DB 를 쓴다")
     void t1() {
-        assertThat(AppTestRunner.testDbPath("1.json").normalize().toString().replace('\\', '/'))
-                .isEqualTo("db_test/wiseSaying/1.json");
+        assertThat(AppConfig.isTestMode()).isTrue();
+        assertThat(AppConfig.getDbName()).isEqualTo("wise_saying_test");
+        assertThat(AppConfig.getJdbcUrl()).contains("/wise_saying_test?");
     }
 
     @Test
-    @DisplayName("등록하면 db/wiseSaying/{번호}.json 과 lastId.txt 가 생긴다")
-    void t2() throws IOException {
+    @DisplayName("등록하면 DB 에 저장된다")
+    void t2() {
         AppTestRunner.run("""
                 등록
                 현재를 사랑하라.
@@ -43,17 +40,13 @@ class WiseSayingFilePersistenceTest {
                 종료
                 """);
 
-        assertThat(read("1.json")).isEqualTo("""
-                {
-                  "id": 1,
-                  "content": "현재를 사랑하라.",
-                  "author": "작자미상"
-                }""");
-        assertThat(read("lastId.txt").trim()).isEqualTo("1");
+        WiseSaying saved = AppTestRunner.newTestDbRepository().findById(1).orElseThrow();
+        assertThat(saved.getContent()).isEqualTo("현재를 사랑하라.");
+        assertThat(saved.getAuthor()).isEqualTo("작자미상");
     }
 
     @Test
-    @DisplayName("재시작해도 파일에서 명언을 읽어 목록에 보여 준다")
+    @DisplayName("재시작해도 DB 에서 명언을 읽어 최신순 목록에 보여 준다")
     void t3() {
         AppTestRunner.run("""
                 등록
@@ -78,8 +71,8 @@ class WiseSayingFilePersistenceTest {
     }
 
     @Test
-    @DisplayName("수정하면 파일이 갱신되고, 재시작 후에도 수정된 내용이 보인다")
-    void t4() throws IOException {
+    @DisplayName("수정하면 DB 가 갱신되고, 재시작 후에도 수정된 내용이 보인다")
+    void t4() {
         AppTestRunner.run("""
                 등록
                 현재를 사랑하라.
@@ -90,10 +83,6 @@ class WiseSayingFilePersistenceTest {
                 종료
                 """);
 
-        assertThat(read("1.json"))
-                .contains("\"content\": \"현재와 자신을 사랑하라.\"")
-                .contains("\"author\": \"홍길동\"");
-
         String out = AppTestRunner.run("""
                 목록
                 종료
@@ -103,7 +92,7 @@ class WiseSayingFilePersistenceTest {
     }
 
     @Test
-    @DisplayName("삭제하면 파일도 지워지고, 재시작 후 목록에서도 빠진다")
+    @DisplayName("삭제하면 DB 에서 지워지고, 재시작 후 목록에서도 빠진다")
     void t5() {
         AppTestRunner.run("""
                 등록
@@ -116,8 +105,7 @@ class WiseSayingFilePersistenceTest {
                 종료
                 """);
 
-        assertThat(exists("1.json")).isFalse();
-        assertThat(exists("2.json")).isTrue();
+        assertThat(AppTestRunner.newTestDbRepository().findById(1)).isEmpty();
 
         String out = AppTestRunner.run("""
                 목록
@@ -133,7 +121,7 @@ class WiseSayingFilePersistenceTest {
 
     @Test
     @DisplayName("재시작 후 다음 번호가 이어지고, 삭제한 번호는 재사용하지 않는다")
-    void t6() throws IOException {
+    void t6() {
         AppTestRunner.run("""
                 등록
                 현재를 사랑하라.
@@ -145,8 +133,6 @@ class WiseSayingFilePersistenceTest {
                 종료
                 """);
 
-        assertThat(read("lastId.txt").trim()).isEqualTo("2");
-
         String out = AppTestRunner.run("""
                 등록
                 미래를 꿈꿔라.
@@ -155,9 +141,6 @@ class WiseSayingFilePersistenceTest {
                 """);
 
         assertThat(out).contains("3번 명언이 등록되었습니다.");
-        assertThat(exists("2.json")).isFalse();
-        assertThat(exists("3.json")).isTrue();
-        assertThat(read("lastId.txt").trim()).isEqualTo("3");
     }
 
     @Test
@@ -175,7 +158,7 @@ class WiseSayingFilePersistenceTest {
                 """);
 
         assertThat(out).contains("data.json 파일의 내용이 갱신되었습니다.");
-        assertThat(read("data.json")).isEqualTo("""
+        assertThat(Files.readString(AppTestRunner.testDbPath("data.json"), StandardCharsets.UTF_8)).isEqualTo("""
                 [
                   {
                     "id": 1,
@@ -209,18 +192,32 @@ class WiseSayingFilePersistenceTest {
     }
 
     @Test
-    @DisplayName("실제 db/ 폴더에는 아무것도 쓰지 않는다")
+    @DisplayName("검색·페이징: SQL(LIKE, ORDER BY id DESC, LIMIT/OFFSET)로 처리한 결과")
     void t9() {
-        Path realFile = Path.of("db/wiseSaying/lastId.txt");
-        boolean existedBefore = Files.exists(realFile);
+        WiseSayingDbRepository repository = AppTestRunner.newTestDbRepository();
+        for (int i = 1; i <= 12; i++) {
+            repository.save(new WiseSaying("명언 " + i, i % 2 == 0 ? "짝수작가" : "홀수작가"));
+        }
 
-        AppTestRunner.run("""
-                등록
-                현재를 사랑하라.
-                작자미상
-                종료
-                """);
+        Page<WiseSaying> page = repository.findForListDesc("author", "짝수", 2, 5);
 
-        assertThat(Files.exists(realFile)).isEqualTo(existedBefore);
+        assertThat(page.getTotalCount()).isEqualTo(6);
+        assertThat(page.getTotalPages()).isEqualTo(2);
+        assertThat(page.getContent()).extracting(WiseSaying::getId).containsExactly(2);
+    }
+
+    @Test
+    @DisplayName("검색어의 % 와 _ 는 글자 그대로 찾는다")
+    void t10() {
+        WiseSayingDbRepository repository = AppTestRunner.newTestDbRepository();
+        repository.save(new WiseSaying("100% 노력", "작자미상"));
+        repository.save(new WiseSaying("노력", "작자미상"));
+        repository.save(new WiseSaying("a_b", "작자미상"));
+        repository.save(new WiseSaying("axb", "작자미상"));
+
+        assertThat(repository.findForListDesc("content", "%", 1, 5).getContent())
+                .extracting(WiseSaying::getContent).containsExactly("100% 노력");
+        assertThat(repository.findForListDesc("content", "_", 1, 5).getContent())
+                .extracting(WiseSaying::getContent).containsExactly("a_b");
     }
 }
